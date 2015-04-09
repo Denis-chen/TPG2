@@ -1,0 +1,4 @@
+1>warnings in directory c:\localcant\wdm1\sys
+1>c:\localcant\wdm1\sys\debugprint.c(195) : warning C4996: 'ExAllocatePool': was declared deprecated
+1>c:\localcant\wdm1\sys\debugprint.c(297) : warning C4996: 'ExAllocatePool': was declared deprecated
+1>c:\localcant\wdm1\sys\debugprint.c(321) : warning C4996: 'ExAllocatePool': was declared deprecated
