@@ -1,0 +1,52 @@
+lokal, lokal
+
+
+installieren im gerätemanager, add legacy driver
+vom cd datei auswählen
+
+DebugPrint Monitor
+
+All Programs -> Windows Driver Kits -> Build Environments -> XP
+ordner wechseln
+build eingeben
+
+Dateien fehlen
+c./WinDDK... afxres.h 
+
+C:Windows\system32\drivers	... Ort der Treiber
+
+disable -> austauschen -> enable
+
+1.4 Stefan Reichör
+
+2. 
+- Bluescreen wenn Treiber beendet wird
+- Datein fehlen beim Kompilieren 
+
+
+3. python
+
+def add(a,b):
+	return a+b
+
+x = add(1,2)
+print x
+
+for x in range(0, 5):
+	print "loop iteration: %d" % x
+
+
+if a > b:
+	a = b
+else:
+	b = a
+
+
+a = array([1,2,3]);
+print array
+
+tel = {'john': 01234, 'sape': 54321}
+tel['heinz'] = 878237
+tel
+
+
