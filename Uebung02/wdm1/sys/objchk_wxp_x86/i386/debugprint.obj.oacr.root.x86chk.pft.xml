@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DEFECTS>
+<OACRDEFECTCOUNT>4</OACRDEFECTCOUNT>
+<OACRERRORCOUNT>0</OACRERRORCOUNT>
+<DEFECT _seq="1"><SFA><LINE>195</LINE><COLUMN>35</COLUMN><FILENAME>debugprint.c</FILENAME><FILEPATH>c:\localcant\wdm1\sys\</FILEPATH></SFA><DEFECTCODE>28159</DEFECTCODE><DESCRIPTION>Consider using 'ExAllocatePoolWithTag' instead of 'ExAllocatePool'. Reason: No tag interferes with debugging..</DESCRIPTION><FUNCTION>DebugPrintInit</FUNCTION><FUNCLINE>188</FUNCLINE><PATH/></DEFECT>
+<DEFECT _seq="2"><SFA><LINE>213</LINE><COLUMN>9</COLUMN><FILENAME>debugprint.c</FILENAME><FILEPATH>c:\localcant\wdm1\sys\</FILEPATH></SFA><DEFECTCODE>28155</DEFECTCODE><DESCRIPTION>The function being assigned or passed should be a KSTART_ROUTINE function:  Add the declaration 'KSTART_ROUTINE DebugPrintSystemThread;' before the current first declaration of DebugPrintSystemThread.</DESCRIPTION><FUNCTION>DebugPrintInit</FUNCTION><FUNCLINE>188</FUNCLINE><PATH/></DEFECT>
+<DEFECT _seq="3"><SFA><LINE>297</LINE><COLUMN>43</COLUMN><FILENAME>debugprint.c</FILENAME><FILEPATH>c:\localcant\wdm1\sys\</FILEPATH></SFA><DEFECTCODE>28159</DEFECTCODE><DESCRIPTION>Consider using 'ExAllocatePoolWithTag' instead of 'ExAllocatePool'. Reason: No tag interferes with debugging..</DESCRIPTION><FUNCTION>DebugPrintMsg</FUNCTION><FUNCLINE>274</FUNCLINE><PATH/></DEFECT>
+<DEFECT _seq="4"><SFA><LINE>321</LINE><COLUMN>28</COLUMN><FILENAME>debugprint.c</FILENAME><FILEPATH>c:\localcant\wdm1\sys\</FILEPATH></SFA><DEFECTCODE>28159</DEFECTCODE><DESCRIPTION>Consider using 'ExAllocatePoolWithTag' instead of 'ExAllocatePool'. Reason: No tag interferes with debugging..</DESCRIPTION><FUNCTION>DebugPrintVA</FUNCTION><FUNCLINE>317</FUNCLINE><PATH/></DEFECT>
+</DEFECTS>
