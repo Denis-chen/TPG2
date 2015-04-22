@@ -22,6 +22,7 @@ REMOVE_BUFFER = 0x802
 GET_BUFFER_SIZE = 0x803
 GET_BUFFER = 0x804
 UNRECOGNISED = 0x805
+GET_BUILDTIME = 0x806
 
 def CTL_CODE(DeviceType, Function, Method, Access):
     return (DeviceType << 16) | (Access << 14) | (Function << 2) | Method
@@ -111,3 +112,6 @@ d.DeviceIoControl(REMOVE_BUFFER)
 bufferLength = d.DeviceIoControl(GET_BUFFER_SIZE)
 result, = unpack('i', bufferLength)
 print "Buffer length should be zero. Buffer Length = %d" % result
+
+dateTime = d.DeviceIoControl(GET_BUILDTIME)
+print dateTime

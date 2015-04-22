@@ -28,6 +28,10 @@ KSPIN_LOCK BufferLock;
 PUCHAR	Buffer = NULL;
 ULONG	BufferSize = 0;
 
+int const dateTimeSize = 21;
+char dateTimeBuffer [dateTimeSize];
+
+
 /////////////////////////////////////////////////////////////////////////////
 //	Wdm1Create:
 //
@@ -290,19 +294,64 @@ NTSTATUS Wdm1DeviceControl(	IN PDEVICE_OBJECT fdo,
 		break;
 		
 	///////	Get DateTime
-	case IOCTL_WDM1_GET_BUILDTIME:
-		if( OutputLength>BufferSize)
-			status = STATUS_INVALID_PARAMETER;
-		else
-		{			
-			char dateTimeBuffer [50];
-			strcpy(dateTimeBuffer, __DATE__);
-			strcat(dateTimeBuffer, __TIME__);
-			
-			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer,Buffer,BytesTxd);
-		}
+	case IOCTL_WDM1_GET_BUILDTIME:	
+			{
+			if (OutputLength<dateTimeSize){
+				status = STATUS_INVALID_PARAMETER;
+			}
+			else {
+				memset(dateTimeBuffer, 0, dateTimeSize);
+				strcpy(dateTimeBuffer, __DATE__);
+				strcat(dateTimeBuffer, " ");
+				strcat(dateTimeBuffer, __TIME__);
+				DebugPrint("DateTime: %s", dateTimeBuffer);
+				BytesTxd = dateTimeSize;
+				RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer,dateTimeBuffer,dateTimeSize);
+			}
+			}
 		break;
-
+		
+	/////// ------------- RPN STACK --------------------
+	case IOCTL_WDM1_RPN_PUSH:
+		if (//stack full){
+			status = STATUS_UNSUCCESSFUL;
+		}
+		else {
+			//push
+		}
+	break;
+	
+	case IOCTL_WDM1_RPN_POP:
+		if( OutputLength<sizeof(ULONG))
+			status = STATUS_INVALID_PARAMETER;
+		else if (//stack leer){
+			status = STATUS_UNSUCCESSFUL;
+		}
+		else {
+			//pop
+			BytesTxd = sizeof(ULONG);
+			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer,&BufferSize,sizeof(ULONG));
+		}	
+	break;
+	
+	case IOCTL_WDM1_RPN_ADD:
+	break;
+	
+	case IOCTL_WDM1_RPN_SUB:
+	break;
+	
+	case IOCTL_WDM1_RPN_MULT:
+	break;
+	
+	case IOCTL_WDM1_RPN_DIV:
+	break;
+	
+	case IOCTL_WDM1_RPN_GETDIVREST:
+	break;
+	
+	case IOCTL_WDM1_RPN_DUPLI:
+	break;
+	
 	///////	Invalid request
 	default:
 		status = STATUS_INVALID_DEVICE_REQUEST;

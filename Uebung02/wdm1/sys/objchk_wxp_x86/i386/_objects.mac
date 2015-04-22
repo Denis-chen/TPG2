@@ -14,7 +14,7 @@ _RES_FILE=$(OBJ_PATH)\$O\wdm1.res
 # lowercased
 BASEDIR=c:\winddk\7600.16385.1
 OBJECT_ROOT=c:\winddk\7600.16385.1
-MAKEDIR_LOWERCASE=u:\github\tpg2\uebung02\wdm1\sys
-OBJ_PATH=u:\github\tpg2\uebung02\wdm1\sys
+MAKEDIR_LOWERCASE=c:\localcant\wdm1\sys
+OBJ_PATH=c:\localcant\wdm1\sys
 CONCURRENT_MIDL=0
 CONCURRENT_MANIFEST_BUILD=0
