@@ -1,0 +1,22 @@
+push and pop
+5
+push and add and pop
+10
+push and sub and pop
+-3
+push and mult and pop
+5*3 = 15
+push and invalid div and pop
+5 / 3 = 0
+push and invalid div 0 and pop
+5 / 0 = 0
+push to the limit
+problem with driver or stack over/underflow
+Unexpected error: (31, 'DeviceIoControl', 'A device attached to the system is not functioning.')
+pop to zero
+problem with driver or stack over/underflow
+Unexpected error: (31, 'DeviceIoControl', 'A device attached to the system is not functioning.')
+push and getdivrest and pop
+5 modulo 3 = 0
+duplicate
+should be 12 = 12
