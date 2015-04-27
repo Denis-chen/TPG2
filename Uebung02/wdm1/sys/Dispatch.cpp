@@ -19,6 +19,7 @@
 
 #include "wdm1.h"
 #include "Ioctl.h"
+#include "RpnCalculator.h"
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -29,7 +30,20 @@ PUCHAR	Buffer = NULL;
 ULONG	BufferSize = 0;
 
 int const dateTimeSize = 21;
-char dateTimeBuffer [dateTimeSize];
+char dateTimeBuffer[dateTimeSize];
+
+// RPN Stack
+Stack s;
+
+// Print Stack
+void DebugPrintStack(){
+	int i = 0;
+	DebugPrint("Stack: ");
+	for (i = 0; i < STACK_MAX; i++){
+		DebugPrint("%d", (int)s.data[i]);
+	}
+	DebugPrint("\n");
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -47,14 +61,16 @@ char dateTimeBuffer [dateTimeSize];
 //	Return Value:
 //		This function returns STATUS_XXX
 
-NTSTATUS Wdm1Create(	IN PDEVICE_OBJECT fdo,
-					IN PIRP Irp)
+NTSTATUS Wdm1Create(IN PDEVICE_OBJECT fdo,
+	IN PIRP Irp)
 {
 	PIO_STACK_LOCATION IrpStack = IoGetCurrentIrpStackLocation(Irp);
-	DebugPrint( "Create File is %T", &(IrpStack->FileObject->FileName));
+	DebugPrint("Create File is %T", &(IrpStack->FileObject->FileName));
+
+	Stack_Init(&s);
 
 	// Complete successfully
-	return CompleteIrp(Irp,STATUS_SUCCESS,0);
+	return CompleteIrp(Irp, STATUS_SUCCESS, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -70,15 +86,15 @@ NTSTATUS Wdm1Create(	IN PDEVICE_OBJECT fdo,
 //	Return Value:
 //		This function returns STATUS_XXX
 
-NTSTATUS Wdm1Close(	IN PDEVICE_OBJECT fdo,
-					IN PIRP Irp)
+NTSTATUS Wdm1Close(IN PDEVICE_OBJECT fdo,
+	IN PIRP Irp)
 {
 	DebugPrintMsg("Close");
 
 	// Complete successfully
-	return CompleteIrp(Irp,STATUS_SUCCESS,0);
+	return CompleteIrp(Irp, STATUS_SUCCESS, 0);
 }
- 
+
 /////////////////////////////////////////////////////////////////////////////
 //	Wdm1Read:
 //
@@ -96,7 +112,7 @@ NTSTATUS Wdm1Close(	IN PDEVICE_OBJECT fdo,
 //		This function returns STATUS_XXX
 
 NTSTATUS Wdm1Read(IN PDEVICE_OBJECT fdo,
-				  IN PIRP Irp)
+	IN PIRP Irp)
 {
 	PIO_STACK_LOCATION IrpStack = IoGetCurrentIrpStackLocation(Irp);
 	NTSTATUS status = STATUS_SUCCESS;
@@ -105,41 +121,41 @@ NTSTATUS Wdm1Read(IN PDEVICE_OBJECT fdo,
 	// Get call parameters
 	LONGLONG FilePointer = IrpStack->Parameters.Read.ByteOffset.QuadPart;
 	ULONG ReadLen = IrpStack->Parameters.Read.Length;
-	DebugPrint("Read %d bytes from file pointer %d",(int)ReadLen,(int)FilePointer);
+	DebugPrint("Read %d bytes from file pointer %d", (int)ReadLen, (int)FilePointer);
 
 	// Get access to the shared buffer
 	KIRQL irql;
-	KeAcquireSpinLock(&BufferLock,&irql);
+	KeAcquireSpinLock(&BufferLock, &irql);
 
 	// Check file pointer
-	if( FilePointer<0)
+	if (FilePointer < 0)
 		status = STATUS_INVALID_PARAMETER;
-	if( FilePointer>=(LONGLONG)BufferSize)
+	if (FilePointer >= (LONGLONG)BufferSize)
 		status = STATUS_END_OF_FILE;
 
-	if( status==STATUS_SUCCESS)
+	if (status == STATUS_SUCCESS)
 	{
 		// Get transfer count
-		if( ((ULONG)FilePointer)+ReadLen>BufferSize)
+		if (((ULONG)FilePointer) + ReadLen > BufferSize)
 		{
 			BytesTxd = BufferSize - (ULONG)FilePointer;
-			if( BytesTxd<0) BytesTxd = 0;
+			if (BytesTxd < 0) BytesTxd = 0;
 		}
 		else
 			BytesTxd = ReadLen;
 
 		// Read from shared buffer
-		if( BytesTxd>0 && Buffer!=NULL)
-			RtlCopyMemory( Irp->AssociatedIrp.SystemBuffer, Buffer+FilePointer, BytesTxd);
+		if (BytesTxd>0 && Buffer != NULL)
+			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, Buffer + FilePointer, BytesTxd);
 	}
 
 	// Release shared buffer
-	KeReleaseSpinLock(&BufferLock,irql);
+	KeReleaseSpinLock(&BufferLock, irql);
 
-	DebugPrint("Read: %d bytes returned",(int)BytesTxd);
+	DebugPrint("Read: %d bytes returned", (int)BytesTxd);
 
 	// Complete IRP
-	return CompleteIrp(Irp,status,BytesTxd);
+	return CompleteIrp(Irp, status, BytesTxd);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -158,8 +174,8 @@ NTSTATUS Wdm1Read(IN PDEVICE_OBJECT fdo,
 //	Return Value:
 //		This function returns STATUS_XXX
 
-NTSTATUS Wdm1Write(	IN PDEVICE_OBJECT fdo,
-					IN PIRP Irp)
+NTSTATUS Wdm1Write(IN PDEVICE_OBJECT fdo,
+	IN PIRP Irp)
 {
 	PIO_STACK_LOCATION IrpStack = IoGetCurrentIrpStackLocation(Irp);
 	NTSTATUS status = STATUS_SUCCESS;
@@ -168,34 +184,34 @@ NTSTATUS Wdm1Write(	IN PDEVICE_OBJECT fdo,
 	// Get call parameters
 	LONGLONG FilePointer = IrpStack->Parameters.Write.ByteOffset.QuadPart;
 	ULONG WriteLen = IrpStack->Parameters.Write.Length;
-	DebugPrint("Write %d bytes from file pointer %d",(int)WriteLen,(int)FilePointer);
+	DebugPrint("Write %d bytes from file pointer %d", (int)WriteLen, (int)FilePointer);
 
-	if( FilePointer<0)
+	if (FilePointer < 0)
 		status = STATUS_INVALID_PARAMETER;
 	else
 	{
 		// Get access to the shared buffer
 		KIRQL irql;
-		KeAcquireSpinLock(&BufferLock,&irql);
+		KeAcquireSpinLock(&BufferLock, &irql);
 
 		BytesTxd = WriteLen;
 
 		// (Re)allocate buffer if necessary
-		if( ((ULONG)FilePointer)+WriteLen>BufferSize)
+		if (((ULONG)FilePointer) + WriteLen > BufferSize)
 		{
-			ULONG NewBufferSize = ((ULONG)FilePointer)+WriteLen;
-			PVOID NewBuffer = ExAllocatePool(NonPagedPool,NewBufferSize);
-			if( NewBuffer==NULL)
+			ULONG NewBufferSize = ((ULONG)FilePointer) + WriteLen;
+			PVOID NewBuffer = ExAllocatePool(NonPagedPool, NewBufferSize);
+			if (NewBuffer == NULL)
 			{
 				BytesTxd = BufferSize - (ULONG)FilePointer;
-				if( BytesTxd<0) BytesTxd = 0;
+				if (BytesTxd < 0) BytesTxd = 0;
 			}
 			else
 			{
-				RtlZeroMemory(NewBuffer,NewBufferSize);
-				if( Buffer!=NULL)
+				RtlZeroMemory(NewBuffer, NewBufferSize);
+				if (Buffer != NULL)
 				{
-					RtlCopyMemory(NewBuffer,Buffer,BufferSize);
+					RtlCopyMemory(NewBuffer, Buffer, BufferSize);
 					ExFreePool(Buffer);
 				}
 				Buffer = (PUCHAR)NewBuffer;
@@ -204,17 +220,17 @@ NTSTATUS Wdm1Write(	IN PDEVICE_OBJECT fdo,
 		}
 
 		// Write to shared memory
-		if( BytesTxd>0 && Buffer!=NULL)
-			RtlCopyMemory( Buffer+FilePointer, Irp->AssociatedIrp.SystemBuffer, BytesTxd);
+		if (BytesTxd>0 && Buffer != NULL)
+			RtlCopyMemory(Buffer + FilePointer, Irp->AssociatedIrp.SystemBuffer, BytesTxd);
 
 		// Release shared buffer
-		KeReleaseSpinLock(&BufferLock,irql);
+		KeReleaseSpinLock(&BufferLock, irql);
 	}
 
-	DebugPrint("Write: %d bytes written",(int)BytesTxd);
+	DebugPrint("Write: %d bytes written", (int)BytesTxd);
 
 	// Complete IRP
-	return CompleteIrp(Irp,status,BytesTxd);
+	return CompleteIrp(Irp, status, BytesTxd);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -235,8 +251,8 @@ NTSTATUS Wdm1Write(	IN PDEVICE_OBJECT fdo,
 //	Return Value:
 //		This function returns STATUS_XXX
 
-NTSTATUS Wdm1DeviceControl(	IN PDEVICE_OBJECT fdo,
-							IN PIRP Irp)
+NTSTATUS Wdm1DeviceControl(IN PDEVICE_OBJECT fdo,
+	IN PIRP Irp)
 {
 	PIO_STACK_LOCATION IrpStack = IoGetCurrentIrpStackLocation(Irp);
 	NTSTATUS status = STATUS_SUCCESS;
@@ -247,23 +263,23 @@ NTSTATUS Wdm1DeviceControl(	IN PDEVICE_OBJECT fdo,
 	ULONG OutputLength = IrpStack->Parameters.DeviceIoControl.OutputBufferLength;
 
 	DebugPrint("DeviceIoControl: Control code %x InputLength %d OutputLength %d",
-				ControlCode, InputLength, OutputLength);
+		ControlCode, InputLength, OutputLength);
 
 	// Get access to the shared buffer
 	KIRQL irql;
-	KeAcquireSpinLock(&BufferLock,&irql);
-	switch( ControlCode)
+	KeAcquireSpinLock(&BufferLock, &irql);
+	switch (ControlCode)
 	{
-	///////	Zero Buffer
+		///////	Zero Buffer
 	case IOCTL_WDM1_ZERO_BUFFER:
 		// Zero the buffer
-		if( Buffer!=NULL && BufferSize>0)
-			RtlZeroMemory(Buffer,BufferSize);
+		if (Buffer != NULL && BufferSize > 0)
+			RtlZeroMemory(Buffer, BufferSize);
 		break;
 
-	///////	Remove Buffer
+		///////	Remove Buffer
 	case IOCTL_WDM1_REMOVE_BUFFER:
-		if( Buffer!=NULL)
+		if (Buffer != NULL)
 		{
 			ExFreePool(Buffer);
 			Buffer = NULL;
@@ -271,98 +287,131 @@ NTSTATUS Wdm1DeviceControl(	IN PDEVICE_OBJECT fdo,
 		}
 		break;
 
-	///////	Get Buffer Size as ULONG
+		///////	Get Buffer Size as ULONG
 	case IOCTL_WDM1_GET_BUFFER_SIZE:
-		if( OutputLength<sizeof(ULONG))
+		if (OutputLength < sizeof(ULONG))
 			status = STATUS_INVALID_PARAMETER;
 		else
 		{
 			BytesTxd = sizeof(ULONG);
-			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer,&BufferSize,sizeof(ULONG));
+			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, &BufferSize, sizeof(ULONG));
 		}
 		break;
 
-	///////	Get Buffer
+		///////	Get Buffer
 	case IOCTL_WDM1_GET_BUFFER:
-		if( OutputLength>BufferSize)
+		if (OutputLength > BufferSize)
 			status = STATUS_INVALID_PARAMETER;
 		else
 		{
 			BytesTxd = OutputLength;
-			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer,Buffer,BytesTxd);
+			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, Buffer, BytesTxd);
 		}
 		break;
-		
-	///////	Get DateTime
-	case IOCTL_WDM1_GET_BUILDTIME:	
-			{
-			if (OutputLength<dateTimeSize){
-				status = STATUS_INVALID_PARAMETER;
+
+		///////	Get DateTime
+	case IOCTL_WDM1_GET_BUILDTIME:
+	{
+		if (OutputLength < dateTimeSize){
+			status = STATUS_INVALID_PARAMETER;
+		}
+		else {
+			memset(dateTimeBuffer, 0, dateTimeSize);
+			strcpy(dateTimeBuffer, __DATE__);
+			strcat(dateTimeBuffer, " ");
+			strcat(dateTimeBuffer, __TIME__);
+			DebugPrint("DateTime: %s", dateTimeBuffer);
+			BytesTxd = dateTimeSize;
+			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, dateTimeBuffer, dateTimeSize);
+		}
+	}
+		break;
+
+		/////// ------------- RPN STACK --------------------
+	case IOCTL_WDM1_RPN_PUSH:
+	{
+		int value = 0;
+		RtlCopyMemory(value, Irp->AssociatedIrp.SystemBuffer, 4); // 4 byte = 32bit
+		BytesTxd = 4;
+		if (!Stack_Push(&s, value)){
+			status = STATUS_UNSUCCESSFUL;
+			BytesTxd = 0;
+		}
+	}
+		break;
+
+	case IOCTL_WDM1_RPN_POP:
+	{
+		if (OutputLength < 4) {
+			status = STATUS_INVALID_PARAMETER;
+		}
+		else {
+			int value = 0;
+			if (Stack_Pop(&s, value)){
+				BytesTxd = 4;
+				RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, &value, BytesTxd);
 			}
 			else {
-				memset(dateTimeBuffer, 0, dateTimeSize);
-				strcpy(dateTimeBuffer, __DATE__);
-				strcat(dateTimeBuffer, " ");
-				strcat(dateTimeBuffer, __TIME__);
-				DebugPrint("DateTime: %s", dateTimeBuffer);
-				BytesTxd = dateTimeSize;
-				RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer,dateTimeBuffer,dateTimeSize);
+				BytesTxd = 0;
+				status = STATUS_UNSUCCESSFUL;
 			}
-			}
+		}
+	}
 		break;
-		
-	/////// ------------- RPN STACK --------------------
-	case IOCTL_WDM1_RPN_PUSH:
-		if (//stack full){
-			status = STATUS_UNSUCCESSFUL;
-		}
-		else {
-			//push
-		}
-	break;
-	
-	case IOCTL_WDM1_RPN_POP:
-		if( OutputLength<sizeof(ULONG))
-			status = STATUS_INVALID_PARAMETER;
-		else if (//stack leer){
-			status = STATUS_UNSUCCESSFUL;
-		}
-		else {
-			//pop
-			BytesTxd = sizeof(ULONG);
-			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer,&BufferSize,sizeof(ULONG));
-		}	
-	break;
-	
+
 	case IOCTL_WDM1_RPN_ADD:
-	break;
-	
+		if (!RpnCalculator_Add(&s)){
+			BytesTxd = 0;
+			status = STATUS_UNSUCCESSFUL;
+		}
+		break;
+
 	case IOCTL_WDM1_RPN_SUB:
-	break;
-	
+		if (!RpnCalculator_Substract(&s)){
+			BytesTxd = 0;
+			status = STATUS_UNSUCCESSFUL;
+		}
+		break;
+
 	case IOCTL_WDM1_RPN_MULT:
-	break;
-	
+		if (!RpnCalculator_Multiply(&s)){
+			BytesTxd = 0;
+			status = STATUS_UNSUCCESSFUL;
+		}
+		break;
+
 	case IOCTL_WDM1_RPN_DIV:
-	break;
-	
+		if (!RpnCalculator_Divide(&s)){
+			BytesTxd = 0;
+			status = STATUS_UNSUCCESSFUL;
+		}
+		break;
+
 	case IOCTL_WDM1_RPN_GETDIVREST:
-	break;
-	
+		if (!RpnCalculator_Modulo(&s)){
+			BytesTxd = 0;
+			status = STATUS_UNSUCCESSFUL;
+		}
+		break;
+
 	case IOCTL_WDM1_RPN_DUPLI:
-	break;
-	
-	///////	Invalid request
+		if (!Stack_Dup(&s)){
+			BytesTxd = 0;
+			status = STATUS_UNSUCCESSFUL;
+		}
+		break;
+
+		///////	Invalid request
 	default:
 		status = STATUS_INVALID_DEVICE_REQUEST;
 	}
 	// Release shared buffer
-	KeReleaseSpinLock(&BufferLock,irql);
+	KeReleaseSpinLock(&BufferLock, irql);
 
-	DebugPrint("DeviceIoControl: %d bytes written",(int)BytesTxd);
+	DebugPrint("DeviceIoControl: %d bytes written", (int)BytesTxd);
 
 	// Complete IRP
-	return CompleteIrp(Irp,status,BytesTxd);
+	return CompleteIrp(Irp, status, BytesTxd);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -380,15 +429,15 @@ NTSTATUS Wdm1DeviceControl(	IN PDEVICE_OBJECT fdo,
 //	Return Value:
 //		This function returns STATUS_XXX
 
-NTSTATUS Wdm1SystemControl(	IN PDEVICE_OBJECT fdo,
-							IN PIRP Irp)
+NTSTATUS Wdm1SystemControl(IN PDEVICE_OBJECT fdo,
+	IN PIRP Irp)
 {
 	DebugPrintMsg("SystemControl");
 
 	// Just pass to lower driver
 	IoSkipCurrentIrpStackLocation(Irp);
 	PWDM1_DEVICE_EXTENSION dx = (PWDM1_DEVICE_EXTENSION)fdo->DeviceExtension;
-	return IoCallDriver( dx->NextStackDevice, Irp);
+	return IoCallDriver(dx->NextStackDevice, Irp);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -411,11 +460,11 @@ NTSTATUS Wdm1SystemControl(	IN PDEVICE_OBJECT fdo,
 /////////////////////////////////////////////////////////////////////////////
 //	CompleteIrp:	Sets IoStatus and completes the IRP
 
-NTSTATUS CompleteIrp( PIRP Irp, NTSTATUS status, ULONG info)
+NTSTATUS CompleteIrp(PIRP Irp, NTSTATUS status, ULONG info)
 {
 	Irp->IoStatus.Status = status;
 	Irp->IoStatus.Information = info;
-	IoCompleteRequest(Irp,IO_NO_INCREMENT);
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 	return status;
 }
 

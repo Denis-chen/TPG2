@@ -23,6 +23,14 @@ GET_BUFFER_SIZE = 0x803
 GET_BUFFER = 0x804
 UNRECOGNISED = 0x805
 GET_BUILDTIME = 0x806
+RPN_PUSH = 0x807
+RPN_POP = 0x808
+RPN_ADD = 0x809
+RPN_SUB = 0x810
+RPN_MULT = 0x811
+RPN_DIV = 0x812
+RPN_GETDIVREST = 0x813
+RPN_DUPLI = 0x814
 
 def CTL_CODE(DeviceType, Function, Method, Access):
     return (DeviceType << 16) | (Access << 14) | (Function << 2) | Method
@@ -71,11 +79,11 @@ class HWDevice:
     def SetFilePointer(self, distance):
         win32file.SetFilePointer(self.drvHnd, distance, win32file.FILE_BEGIN)
 
-    def DeviceIoControl(self, function):      
+    def DeviceIoControl(self, function, input):      
         
         IOCTL_USB_GET_DEVICE_DESCRIPTOR = CTL_CODE(FILE_DEVICE_UNKNOWN, function, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
-        result = win32file.DeviceIoControl(self.drvHnd, IOCTL_USB_GET_DEVICE_DESCRIPTOR, "", 512)        
+        result = win32file.DeviceIoControl(self.drvHnd, IOCTL_USB_GET_DEVICE_DESCRIPTOR, input, 512)        
         return result
 
 
@@ -115,3 +123,25 @@ print "Buffer length should be zero. Buffer Length = %d" % result
 
 dateTime = d.DeviceIoControl(GET_BUILDTIME)
 print dateTime
+
+print "push and pop"
+d.DeviceIoControl(RPN_PUSH, 5);
+value = d.DeviceIoControl(RPN_POP, "");
+print value
+
+print "push and add and pop"
+d.DeviceIoControl(RPN_PUSH, 5);
+d.DeviceIoControl(RPN_PUSH, 5);
+d.DeviceIoControl(RPN_ADD, "");
+value = d.DeviceIoControl(RPN_POP, "");
+print value
+
+print "push and mult and pop"
+d.DeviceIoControl(RPN_PUSH, 5);
+d.DeviceIoControl(RPN_PUSH, 5);
+d.DeviceIoControl(RPN_PUSH, 2);
+d.DeviceIoControl(RPN_MULT, "");
+d.DeviceIoControl(RPN_DIV, "");
+value = d.DeviceIoControl(RPN_POP, "");
+print value
+
