@@ -1,0 +1,18 @@
+BUILD: Computing Include file dependencies:
+BUILD: Examining c:\localcant\wdm1\sys directory for files to compile.
+oacr invalidate root:x86chk /autocleanqueue
+BUILD: OACR: Command 'invalidate root:x86chk /autocleanqueue' failed
+1>Compiling c:\localcant\wdm1\sys *************
+1>'nmake.exe /nologo BUILDMSG=Stop. -i BUILD_PASS=PASS1 NOLINK=1 NOPASS0=1 MAKEDIR_RELATIVE_TO_BASEDIR='
+1>c:\localcant\wdm1\sys: TARGETPATH is OBJ
+1>BUILDMSG: _NT_TARGET_VERSION SET TO WINXP
+1> copy c:\localcant\wdm1\sys\objchk_wxp_x86\i386\Wdm1.sys C:\Windows\system32\drivers
+1>Access is denied.
+1> 0 file(s) copied.
+1>Linking for c:\localcant\wdm1\sys *************
+1>'nmake.exe /nologo BUILDMSG=Stop. -i BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 MAKEDIR_RELATIVE_TO_BASEDIR='
+1>c:\localcant\wdm1\sys: TARGETPATH is OBJ
+1>BUILDMSG: _NT_TARGET_VERSION SET TO WINXP
+1> copy c:\localcant\wdm1\sys\objchk_wxp_x86\i386\Wdm1.sys C:\Windows\system32\drivers
+1>Access is denied.
+1> 0 file(s) copied.
