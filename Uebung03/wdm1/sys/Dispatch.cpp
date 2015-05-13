@@ -317,7 +317,7 @@ NTSTATUS Wdm1DeviceControl(IN PDEVICE_OBJECT fdo,
 			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, dateTimeBuffer, dateTimeSize);
 		}
 	}
-		break;
+	break;
 
 	case IOCTL_WDM1_READ_DATABIT:
 	{		
@@ -333,8 +333,9 @@ NTSTATUS Wdm1DeviceControl(IN PDEVICE_OBJECT fdo,
 			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, &dataBit, BytesTxd);			
 		}
 		
-		break;
+		
 	}
+	break;
 	
 	case IOCTL_WDM1_READ_CLOCKBIT:
 	{
@@ -348,30 +349,63 @@ NTSTATUS Wdm1DeviceControl(IN PDEVICE_OBJECT fdo,
 			
 			BytesTxd = 1;
 			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, &clockBit, BytesTxd);			
-		}
+		}		
 	}
+	break;
 	
 	case IOCTL_WDM1_WRITE_DATABIT:
 	{
-		UCHAR dataBit = 0;
-		RtlCopyMemory(&dataBit, Irp->AssociatedIrp.SystemBuffer, 1);
-		BytesTxd = 1;
-	
-		WRITE_PORT_UCHAR (SER_MCR(COM1_BASEADRESS), dataBit);
-	
-		break;
+		if (InputLength < 1)
+		{
+			status = STATUS_INVALID_PARAMETER;
+		}
+		else
+		{
+			UCHAR dataBit = 0;
+			RtlCopyMemory(&dataBit, Irp->AssociatedIrp.SystemBuffer, 1);
+			BytesTxd = 1;
+			
+			UCHAR byte = READ_PORT_UCHAR (SER_MCR(COM1_BASEADRESS));
+			if (dataBit)
+			{
+				byte = byte | 0x01;
+			}
+			else
+			{
+				byte = byte & 0xFE;
+			}			
+			
+			WRITE_PORT_UCHAR (SER_MCR(COM1_BASEADRESS), byte);
+		}		
 	}
-	
+	break;	
+
 	case IOCTL_WDM1_WRITE_CLOCKBIT:
 	{
-		UCHAR clockBit = 0;
-		RtlCopyMemory(&clockBit, Irp->AssociatedIrp.SystemBuffer, 1);
-		BytesTxd = 1;
-	
-		WRITE_PORT_UCHAR (SER_MCR(COM1_BASEADRESS), clockBit);	
-	
-		break;
+		if (InputLength < 1)
+		{
+			status = STATUS_INVALID_PARAMETER;
+		}
+		else
+		{
+			UCHAR clockBit = 0;
+			RtlCopyMemory(&clockBit, Irp->AssociatedIrp.SystemBuffer, 1);
+			BytesTxd = 1;
+		
+			UCHAR byte = READ_PORT_UCHAR (SER_MCR(COM1_BASEADRESS));
+			if (clockBit)
+			{
+				byte = byte | 0x02;
+			}
+			else
+			{
+				byte = byte & 0xFD;
+			}			
+		
+			WRITE_PORT_UCHAR (SER_MCR(COM1_BASEADRESS), byte);
+		}		
 	}
+	break;
 
 		///////	Invalid request
 	default:
