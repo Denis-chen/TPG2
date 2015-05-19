@@ -1,0 +1,2 @@
+1>warnings in directory u:\github\tpg2\uebung03\wdm1\sys
+1>u:\github\tpg2\uebung03\wdm1\sys\dispatch.cpp(195) : warning C4996: 'ExAllocatePool': was declared deprecated

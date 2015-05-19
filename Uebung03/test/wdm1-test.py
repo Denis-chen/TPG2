@@ -3,6 +3,8 @@
 import win32file, win32api, sys, serial
 sys.path += ["DeviceDriverAccess/Release"]
 
+import time
+
 from DeviceDriverAccess import GetDeviceViaInterface
 
 from struct import *
@@ -27,6 +29,8 @@ READ_DATABIT = 0x807
 READ_CLOCKBIT = 0x808
 WRITE_DATABIT = 0x809
 WRITE_CLOCKBIT = 0x810
+
+RTC_BASEADDRESS = 0x51
 
 def CTL_CODE(DeviceType, Function, Method, Access):
     return (DeviceType << 16) | (Access << 14) | (Function << 2) | Method
@@ -105,6 +109,7 @@ class HWDevice:
         ack = self.WriteByteI2C((adress << 1) + 1)
         print "ReadI2C adress 2 ack: %d" % ack
 
+        byteList = []
         for x in range(0, numOfBytes):
             ack = 0
 
@@ -113,23 +118,25 @@ class HWDevice:
             else:
                 ack = 0
 
-            byte = self.ReadByteI2C(ack);
-            print "ReadI2C adress 2 ack: %d" % ack
+            byteList.append(self.ReadByteI2C(ack));
+            print "ReadI2C value ack: %d" % ack
 
         self.SendStopI2C()
+
+        return byteList
 
     def WriteI2C(self, adress, register, data):
         self.SendStartI2C()
 
         ack = self.WriteByteI2C(adress << 1)
-        print "WriteI2C adress ack: %d" % ack
+        #print "WriteI2C adress ack: %d" % ack
 
         ack = self.WriteByteI2C(register)
-        print "WriteI2C register ack: %d" % ack
+        #print "WriteI2C register ack: %d" % ack
 
         for dataByte in data:
             ack = self.WriteByteI2C(dataByte)
-            print "WriteI2C dataByte ack: %d" % ack
+            #print "WriteI2C dataByte ack: %d" % ack
 
         self.SendStopI2C()
 
@@ -182,10 +189,10 @@ class HWDevice:
         self.WriteClock(True)
         self.WriteData(False)
         self.WriteClock(False)
-        print "-----"
+        #print "-----"
 
     def SendStopI2C(self):
-        print "-----"
+        #print "-----"
         self.WriteData(False)
 
         self.WriteClock(True)
@@ -193,36 +200,38 @@ class HWDevice:
         #self.WriteClock(False)
 
     def ReadClock(self):
-        #clockBit = self.DeviceIoControl(READ_CLOCKBIT ,"")
-        #return clockBit
-        print "Read clock: %d" % self.clock
-        return self.clock
+        clockBit = self.DeviceIoControl(READ_CLOCKBIT ,"")
+        result = unpack("b",clockBit)[0]
+        return abs(result-1)
+        #print "Read clock: %d" % self.clock
+        #return self.clock
 
     def WriteClock(self, isOn):
-        if isOn == True:
-            #self.DeviceIoControl(WRITE_CLOCKBIT ,"1")
-            self.clock = 1
+        if isOn == False:
+            self.DeviceIoControl(WRITE_CLOCKBIT ,pack("b",1))
+            #self.clock = 1
         else:
-            #self.DeviceIoControl(WRITE_CLOCKBIT ,"0")
-            self.clock = 0
+            self.DeviceIoControl(WRITE_CLOCKBIT ,pack("b",0))
+            #self.clock = 0
 
-        print "Write clock %d" % self.clock
+        #print "Write clock %d" % self.clock
 
     def ReadData(self):
-        #dataBit = self.DeviceIoControl(READ_DATABIT ,"")
-        #return dataBit
-        print "Read data: %d" % self.data
-        return self.data
+        dataBit = self.DeviceIoControl(READ_DATABIT ,"")
+        result = unpack("b",dataBit)[0]
+        return abs(result-1)
+        #print "Read data: %d" % self.data
+        #return self.data
 
     def WriteData(self, isOn):
-        if isOn == True:
-            #self.DeviceIoControl(WRITE_DATABIT ,"1")
-            self.data = 1
+        if isOn == False:
+            self.DeviceIoControl(WRITE_DATABIT ,pack("b",1))
+            #self.data = 1
         else:
-            #self.DeviceIoControl(WRITE_DATABIT ,"0")
-            self.data = 0
+            self.DeviceIoControl(WRITE_DATABIT ,pack("b",0))
+            #self.data = 0
 
-        print "Write data %d" % self.data
+        #print "Write data %d" % self.data
 
 d = HWDevice(WDM1_GUID)
 
@@ -231,21 +240,14 @@ print dateTime
 
 ser = serial.Serial(0)
 
-#d.WriteClock(False)
-#dataBit = d.ReadData()
-#print dataBit
-#d.WriteData(True)
-#dataBit = d.ReadData()
-#print dataBit
+print ("Seconds: ", d.ReadI2C(RTC_BASEADDRESS, 2)[0])
 
-#d.WriteClock(False)
-#dataBit = d.ReadClock()
-#print dataBit
-#d.WriteClock(True)
-#dataBit = d.ReadClock()
-#print dataBit
+d.WriteI2C(RTC_BASEADDRESS, 2, [0x5])
 
-d.WriteI2C(0xFF, 0x0F, [0xAA, 0x55])
+print("Seconds: ", d.ReadI2C(RTC_BASEADDRESS, 2)[0])
+print("Sleep for 4 seconds")
+time.sleep(4)
+print("Seconds: ", d.ReadI2C(RTC_BASEADDRESS, 2)[0])
 
 ser.close()
 d.CloseDrv()

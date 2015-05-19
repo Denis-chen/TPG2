@@ -329,6 +329,15 @@ NTSTATUS Wdm1DeviceControl(IN PDEVICE_OBJECT fdo,
 		{
 			UCHAR dataBit = READ_PORT_UCHAR (SER_MSR(COM1_BASEADRESS));
 			
+			if (dataBit & 0x10)
+			{
+				dataBit = 1;
+			}
+			else
+			{
+				dataBit = 0;
+			}
+			
 			BytesTxd = 1;
 			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, &dataBit, BytesTxd);			
 		}
@@ -346,6 +355,15 @@ NTSTATUS Wdm1DeviceControl(IN PDEVICE_OBJECT fdo,
 		else 
 		{
 			UCHAR clockBit = READ_PORT_UCHAR (SER_MSR(COM1_BASEADRESS));
+			
+			if (clockBit & 0x20)
+			{
+				clockBit = 1;
+			}
+			else
+			{
+				clockBit = 0;
+			}
 			
 			BytesTxd = 1;
 			RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, &clockBit, BytesTxd);			
