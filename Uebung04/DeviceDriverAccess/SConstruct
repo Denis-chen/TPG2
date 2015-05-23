@@ -1,0 +1,18 @@
+# Use the command "scons" to build the extension
+# You can get scons from: http://www.scons.org/
+
+PythonPath="c:/Python24"
+DdkPath="c:/NTDDK"
+
+env = Environment(CCFLAGS='/O2 /Ob1 /I "%s/include/" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "_WINDLL" /GF /FD /EHsc /MT /Gy' % PythonPath,
+                  LINKFLAGS='/subsystem:windows /DEF:"DeviceDriverAccess.def"',
+                  LIBPATH=PythonPath+"/libs",
+                  LIBS="%s/libfre/i386/setupapi" % DdkPath)
+
+SConscript('SConscript', build_dir='Release', exports=["env"])
+
+# Local Variables:
+# mode: python
+# End:
+
+# arch-tag: a5b4b30b-9cbf-492f-bddd-0270a76d4cda
