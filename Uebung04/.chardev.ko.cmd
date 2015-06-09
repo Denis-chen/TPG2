@@ -1,0 +1,1 @@
+cmd_/home/user/TPG2/chardev.ko := ld -r -m elf_i386 -T /usr/src/linux-headers-3.11.0-20-generic/scripts/module-common.lds --build-id  -o /home/user/TPG2/chardev.ko /home/user/TPG2/chardev.o /home/user/TPG2/chardev.mod.o
