@@ -1,0 +1,14 @@
+14:80:0
+Sleep for 4 seconds
+14:80:4
+
+[ 8489.706113] ioctl was called num: -2147195904, param: 0
+[ 8489.706115] read databit was called
+[ 8489.706120] read DataBit: 0
+[ 8489.706133] ioctl was called num: -2147195901, param: 3215241996
+[ 8489.706136] write clockbit was called
+[ 8489.706138] clockbit to write 1
+[ 8489.706157] ioctl was called num: -2147195902, param: 3215241996
+[ 8489.706160] write databit was called
+[ 8489.706162] dataBit to write 0
+

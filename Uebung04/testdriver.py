@@ -2,7 +2,7 @@
 
 
 import sys, serial, array
-
+from time import sleep
 my_platform = "";
 
 if sys.platform == "win32":
@@ -22,10 +22,10 @@ elif sys.platform == "linux2":
     
     from fcntl import ioctl
 
-    IOCTL_SET_MSG = -2147195904
-    IOCTL_GET_MSG = -2147195903
-    #IOCTL_GET_NTH_BYTE = -2147195902
-    IOCTL_GET_NTH_BYTE = -1073454078
+    IOCTL_READ_DATABIT = -2147195904
+    IOCTL_READ_CLOCKBIT = -2147195903
+    IOCTL_WRITE_DATABIT = -2147195902
+    IOCTL_WRITE_CLOCKBIT = -2147195901
 
 
 import time
@@ -128,16 +128,24 @@ class HWDevice:
                 print "Unexpected error:", e
                 result = 0
         elif my_platform == "linux2":            
-            print "set msg"
-            print ioctl(d.fd, IOCTL_SET_MSG, pack("b",1));
+            if function == READ_DATABIT:
+                result = ioctl(d.fd, IOCTL_READ_DATABIT, 0); 
+            elif function == READ_CLOCKBIT:
+                result = ioctl(d.fd, IOCTL_READ_CLOCKBIT, 0);
+            elif function == WRITE_DATABIT:
+                result = ioctl(d.fd, IOCTL_WRITE_DATABIT, input);
+            elif function == WRITE_CLOCKBIT:
+                result = ioctl(d.fd, IOCTL_WRITE_CLOCKBIT, input);
+
+            #print "set msg"
+            #print ioctl(d.fd, IOCTL_WRITE_DATABIT, pack("b",1));
             #print fcntl.fcntl(d.fd, IOCTL_SET_MSG, "test msg")
         
-            print "get msg"
-            buf = array.array('h', [0])
-            print ioctl(d.fd, IOCTL_GET_MSG, buf);
+            #print "get msg"
+            #buf = array.array('h', [0])
             #print fcntl.fcntl(d.fd, IOCTL_GET_MSG)
 
-            result = 0
+            #result = 0
             #self.fd.write("asdfasf TestString ...")
             #result = self.fd.read()
 
@@ -148,15 +156,15 @@ class HWDevice:
         self.SendStartI2C()
 
         ack = self.WriteByteI2C(adress << 1)
-        print "ReadI2C adress ack: %d" % ack
+        #print "ReadI2C adress ack: %d" % ack
 
         ack = self.WriteByteI2C(register)
-        print "ReadI2C register ack: %d" % ack
+        #print "ReadI2C register ack: %d" % ack
 
         self.SendStartI2C()
 
         ack = self.WriteByteI2C((adress << 1) + 1)
-        print "ReadI2C adress 2 ack: %d" % ack
+        #print "ReadI2C adress 2 ack: %d" % ack
 
         byteList = []
         for x in range(0, numOfBytes):
@@ -168,7 +176,7 @@ class HWDevice:
                 ack = 0
 
             byteList.append(self.ReadByteI2C(ack));
-            print "ReadI2C value ack: %d" % ack
+            #print "ReadI2C value ack: %d" % ack
 
         self.SendStopI2C()
 
@@ -267,8 +275,8 @@ class HWDevice:
 
     def ReadData(self):
         dataBit = self.DeviceIoControl(READ_DATABIT ,"")
-        result = unpack("b",dataBit)[0]
-        return abs(result-1)
+        #result = unpack("b",dataBit)[0]
+        return abs(dataBit-1)
         #print "Read data: %d" % self.data
         #return self.data
 
@@ -282,20 +290,38 @@ class HWDevice:
 
         #print "Write data %d" % self.data
 
+    def GetTime(self):
+        #return "%d:%d:%d" % d.ReadI2C(RTC_BASEADDRESS, 4)[0].decode("utf-8"), d.ReadI2C(RTC_BASEADDRESS, 3)[0].decode("utf-8"), d.ReadI2C(RTC_BASEADDRESS, 2)[0].decode("utf-8")
+        string = "%d:%d:%d" % (d.ReadI2C(RTC_BASEADDRESS, 4)[0], d.ReadI2C(RTC_BASEADDRESS, 3)[0], d.ReadI2C(RTC_BASEADDRESS, 2)[0])
+        return string
+
+
 d = HWDevice()
 
 ser = serial.Serial(0)
 
-d.DeviceIoControl(WRITE_DATABIT ,pack("b",0))
+#for i in range(1,100):
+   # print d.DeviceIoControl(READ_DATABIT, 0)
 
-#print ("Seconds: ", d.ReadI2C(RTC_BASEADDRESS, 2)[0])
+   # print "write data 0"
+ #   d.DeviceIoControl(WRITE_DATABIT ,pack("b",1))
+  #  print d.DeviceIoControl(WRITE_CLOCKBIT ,pack("b",1))
+   # sleep(1)
+    #print d.DeviceIoControl(READ_CLOCKBIT, 0)
+    
+    #print d.DeviceIoControl(WRITE_DATABIT ,pack("b",0))
+    #print "write clock 1"
+    #d.DeviceIoControl(WRITE_CLOCKBIT ,pack("b",0))
+    #sleep(1)
 
-#d.WriteI2C(RTC_BASEADDRESS, 2, [0x5])
+#print d.DeviceIoControl(READ_DATABIT, 0)
 
-#print("Seconds: ", d.ReadI2C(RTC_BASEADDRESS, 2)[0])
-#print("Sleep for 4 seconds")
-time.sleep(4)
-#print("Seconds: ", d.ReadI2C(RTC_BASEADDRESS, 2)[0])
+
+print d.GetTime()
+print("Sleep for 4 seconds")
+time.sleep(4);
+print d.GetTime()
+
 
 ser.close()
 d.CloseDrv()

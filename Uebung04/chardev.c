@@ -175,20 +175,26 @@ long device_ioctl(	/* removed inode */
 		 unsigned int ioctl_num,	/* number and param for ioctl */
 		 unsigned long ioctl_param)
 {
-	int i;
-	char *temp;
-	char ch;
+	//int i;
+	//char *temp;
+	//char ch;
 
-    printk(KERN_INFO "ioctl was called num: %d, param: %lu", ioctl_num, ioctl_param);
+    unsigned char dataBit = 0;
+    unsigned char clockBit = 0;
+    unsigned char mcr_byte = 0;
+    char* clockBitToWrite = 0;
+    char* dataBitToWrite = 0;
+
+    printk(KERN_INFO "ioctl was called num: %d, param: %lu\n", ioctl_num, ioctl_param);
 
 	/* 
 	 * Switch according to the ioctl called 
 	 */
 	switch (ioctl_num) {
 	case IOCTL_WDM1_READ_DATABIT:
-        printk(KERN_INFO "read databit was called");
+        printk(KERN_INFO "read databit was called\n");
 
-        unsigned char dataBit = inb(SER_MSR(COM1_BASEADRESS));    
+        dataBit = inb(SER_MSR(COM1_BASEADRESS));    
 		if (dataBit & 0x10)
 		{
 			dataBit = 1;
@@ -197,14 +203,14 @@ long device_ioctl(	/* removed inode */
 		{
 			dataBit = 0;
 		}
-        printk(KERN_INFO "read DataBit: %d", dataBit);	
+        printk(KERN_INFO "read DataBit: %d\n", dataBit);	
 		return dataBit;
 		break;
 
 	case IOCTL_WDM1_READ_CLOCKBIT:
-        printk(KERN_INFO "read clockbit was called");
+        printk(KERN_INFO "read clockbit was called\n");
 		
-		unsigned char clockBit = inb(SER_MSR(COM1_BASEADRESS));    	
+		clockBit = inb(SER_MSR(COM1_BASEADRESS));    	
 		if (clockBit & 0x20)
 		{
 			clockBit = 1;
@@ -213,44 +219,43 @@ long device_ioctl(	/* removed inode */
 		{
 			clockBit = 0;
 		}		
-		printk(KERN_INFO "read clockBit: %d", clockBit);	
+		printk(KERN_INFO "read clockBit: %d\n", clockBit);	
         return clockBit;        
 		break;
 
 	case IOCTL_WDM1_WRITE_DATABIT:
-	    printk(KERN_INFO "write databit was called");
-		
-		char* dataBitToWrite = 0;
+	    printk(KERN_INFO "write databit was called\n");
+			
 		if (ioctl_param != 0){
 			dataBitToWrite = (char*)ioctl_param;
-			printk(KERN_INFO "dataBit to write %d", dataBitToWrite[0]);
-			unsigned char mcr_byte = inb(SER_MCR(COM1_BASEADRESS));
-			if (dataBitToWrite)
+			printk(KERN_INFO "dataBit to write %d\n", dataBitToWrite[0]);
+			mcr_byte = inb(SER_MCR(COM1_BASEADRESS));
+            printk(KERN_INFO "mcr_byte: %x",mcr_byte);			
+            if (dataBitToWrite[0])
 			{
-				mcr_byte = mcr_byte | 0x01;
+				mcr_byte = mcr_byte | 0x01;                
 			}
 			else
 			{
 				mcr_byte = mcr_byte & 0xFE;
-			}		
+			}		            
 			outb(mcr_byte, SER_MCR(COM1_BASEADRESS));
 		}
 		else
 		{
-			printk(KERN_INFO "cant cast ioctl_param");
+			printk(KERN_INFO "cant cast ioctl_param\n");
 			return FAILURE;
 		}
 		break;
 
     case IOCTL_WDM1_WRITE_CLOCKBIT:
-		printk(KERN_INFO "write clockbit was called");
+		printk(KERN_INFO "write clockbit was called\n");
 	
-		char* clockBitToWrite = 0;
 		if (ioctl_param != 0){
 			clockBitToWrite = (char*)ioctl_param;
-			printk(KERN_INFO "clockbit to write %d", clockBitToWrite[0]);
-			unsigned char mcr_byte = inb(SER_MCR(COM1_BASEADRESS));
-			if (clockBitToWrite)
+			printk(KERN_INFO "clockbit to write %d\n", clockBitToWrite[0]);
+            mcr_byte = inb(SER_MCR(COM1_BASEADRESS));
+			if (clockBitToWrite[0])
 			{
 				mcr_byte = mcr_byte | 0x02;
 			}
@@ -262,7 +267,7 @@ long device_ioctl(	/* removed inode */
 		}
 		else
 		{
-			printk(KERN_INFO "cant cast ioctl_param");
+			printk(KERN_INFO "cant cast ioctl_param\n");
 			return FAILURE;
 		}
         break;
